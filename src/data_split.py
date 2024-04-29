@@ -12,7 +12,7 @@ def train_test_split(
     """
     """
     # Convert pickup_hour to timestamp with timezone information
-    df['pickup_hour'] = pd.to_datetime(df['pickup_hour'], format='%Y-%m-%d %H:%M:%S', utc=True)
+    df['pickup_hour'] = pd.to_datetime(df['pickup_hour'], format='%Y-%m-%d %H:%M:%S%z', utc=True)
 
     # Convert cutoff_date to timestamp with timezone information
     cutoff_date = pd.to_datetime(cutoff_date, utc=True)
