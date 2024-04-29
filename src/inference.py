@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 import hopsworks
-# from hsfs.feature_store import FeatureStore
+from hsfs.feature_store import FeatureStore
 import pandas as pd
 import numpy as np
 
@@ -28,73 +28,7 @@ def get_model_predictions(model, features: pd.DataFrame) -> pd.DataFrame:
     return results
 
 
-# def load_batch_of_features_from_store(
-#     current_date: pd.Timestamp,    
-# ) -> pd.DataFrame:
-#     """Fetches the batch of features used by the ML system at `current_date`
 
-#     Args:
-#         current_date (datetime): datetime of the prediction for which we want
-#         to get the batch of features
-
-#     Returns:
-#         pd.DataFrame: 4 columns:
-#             - `pickup_hour`
-#             - `rides`
-#             - `pickup_location_id`
-#     """
-#     n_features = config.N_FEATURES
-
-#     feature_view = get_or_create_feature_view(FEATURE_VIEW_METADATA)
-
-#     # fetch data from the feature store
-#     fetch_data_from = current_date - timedelta(days=28)
-#     fetch_data_to = current_date - timedelta(hours=1)
-    
-#     print(f"fetch_data_from: {fetch_data_from}")
-#     print(f"fetch_data_to: {fetch_data_to}")
-    
-#     # add plus minus margin to make sure we do not drop any observation
-#     ts_data = feature_view.get_batch_data(
-#         start_time=fetch_data_from - timedelta(days=1),
-#         end_time=fetch_data_to + timedelta(days=1)
-#     )
-#     print(f"ts_data before filtering: {ts_data.shape}") 
-    
-#     # filter data to the time period we are interested in
-#     ts_data['pickup_hour_ts'] = ts_data['pickup_hour'].astype(np.int64) // 10**6
-#     pickup_ts_from = int(fetch_data_from.timestamp() * 1000)
-#     pickup_ts_to = int(fetch_data_to.timestamp() * 1000)
-#     ts_data = ts_data[ts_data.pickup_hour_ts.between(pickup_ts_from, pickup_ts_to)]
-    
-#     print(f"ts_data after filtering: {ts_data.shape}")
-    
-#     # sort data by location and time
-#     ts_data.sort_values(by=['pickup_location_id', 'pickup_hour'], inplace=True)
-
-#     # validate we are not missing data in the feature store
-#     location_ids = ts_data['pickup_location_id'].unique()
-#     assert len(ts_data) == config.N_FEATURES * len(location_ids), \
-#         "Time-series data is not complete. Make sure your feature pipeline is up and runnning."
-
-#     # transpose time-series data as a feature vector, for each `pickup_location_id`
-#     x = np.ndarray(shape=(len(location_ids), n_features), dtype=np.float32)
-#     for i, location_id in enumerate(location_ids):
-#         ts_data_i = ts_data.loc[ts_data.pickup_location_id == location_id, :]
-#         ts_data_i = ts_data_i.sort_values(by=['pickup_hour'])
-#         x[i, :] = ts_data_i['rides'].values
-
-#     # numpy arrays to Pandas dataframes
-#     features = pd.DataFrame(
-#         x,
-#         columns=[f'rides_previous_{i+1}_hour' for i in reversed(range(n_features))]
-#     )
-#     features['pickup_hour'] = current_date
-#     features['pickup_location_id'] = location_ids
-#     features.sort_values(by=['pickup_location_id'], inplace=True)
-
-#     return features
-    
 
 
 def load_batch_of_features_from_store(
@@ -119,50 +53,49 @@ def load_batch_of_features_from_store(
     fetch_data_from = current_date - timedelta(days=28)
     fetch_data_to = current_date - timedelta(hours=1)
 
-    print(f"fetch_data_from: {fetch_data_from}")
-    print(f"fetch_data_to: {fetch_data_to}")
+    # feature_view = feature_store.get_feature_view(
+    #     name=config.FEATURE_VIEW_NAME,
+    #     version=config.FEATURE_VIEW_VERSION
+    # )
 
     # add plus minus margin to make sure we do not drop any observation
     ts_data = feature_view.get_batch_data(
         start_time=fetch_data_from - timedelta(days=1),
         end_time=fetch_data_to + timedelta(days=1)
     )
+   
+    ts_data['pickup_hour'] = pd.to_datetime(ts_data['pickup_hour'])  # Convert pickup_hour to datetime
+    ts_data = ts_data[(ts_data['pickup_hour'] >= fetch_data_from) & (ts_data['pickup_hour'] <= fetch_data_to)]
+ 
 
-    print(f"ts_data before filtering: {ts_data.shape}")
-
-    # filter data to the time period we are interested in
-    ts_data['pickup_hour_ts'] = ts_data['pickup_hour'].astype(np.int64) // 10**6
-    pickup_ts_from = int(fetch_data_from.timestamp() * 1000)
-    pickup_ts_to = int(fetch_data_to.timestamp() * 1000)
-    ts_data = ts_data[ts_data.pickup_hour_ts.between(pickup_ts_from, pickup_ts_to)]
-
-    print(f"ts_data after filtering: {ts_data.shape}")
-
-    # sort data by location and time
-    ts_data.sort_values(by=['pickup_location_id', 'pickup_hour'], inplace=True)
-
-    # validate we are not missing data in the feature store
     location_ids = ts_data['pickup_location_id'].unique()
     assert len(ts_data) == config.N_FEATURES * len(location_ids), \
         "Time-series data is not complete. Make sure your feature pipeline is up and runnning."
 
-    # transpose time-series data as a feature vector, for each `pickup_location_id`
+    ts_data.sort_values(by=['pickup_location_id', 'pickup_hour'], inplace=True)
+    print(f'{ts_data=}')
+
     x = np.ndarray(shape=(len(location_ids), n_features), dtype=np.float32)
+    print(f'location_ids len control {len(location_ids)}')
     for i, location_id in enumerate(location_ids):
         ts_data_i = ts_data.loc[ts_data.pickup_location_id == location_id, :]
         ts_data_i = ts_data_i.sort_values(by=['pickup_hour'])
         x[i, :] = ts_data_i['rides'].values
 
+    print(f'X shape control :{x.shape=}')
     # numpy arrays to Pandas dataframes
     features = pd.DataFrame(
         x,
         columns=[f'rides_previous_{i+1}_hour' for i in reversed(range(n_features))]
     )
+    print(f'features control before {features.shape=}')
     features['pickup_hour'] = current_date
     features['pickup_location_id'] = location_ids
     features.sort_values(by=['pickup_location_id'], inplace=True)
+    print(f'features control later {features.shape=}')
 
     return features
+
 
 
 
@@ -183,6 +116,9 @@ def load_model_from_registry():
     model = joblib.load(Path(model_dir)  / 'model.pkl')
        
     return model
+
+
+
 
 def load_predictions_from_store(
     from_pickup_hour: datetime,
