@@ -153,7 +153,7 @@ with st.spinner(text="Preparing data to plot"):
                   how='inner')
     
     BLACK, GREEN = (0, 0, 0), (0, 255, 0)
-    df['color_scaling'] = df['predicted_demand']
+    df['color_scaling'] = df['rides']
     max_pred, min_pred = df['color_scaling'].max(), df['color_scaling'].min()
     df['fill_color'] = df['color_scaling'].apply(lambda x: pseudocolor(x, min_pred, max_pred, BLACK, GREEN))
     progress_bar.progress(3/N_STEPS)
