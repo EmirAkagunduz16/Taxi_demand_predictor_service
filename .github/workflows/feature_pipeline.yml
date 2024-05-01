@@ -27,7 +27,6 @@ jobs:
 
     - name: Install dependencies
       run: poetry install
-      if: steps.cache.outputs.cache-hit != 'true'
 
 
     - name: execute python workflows from bash script
