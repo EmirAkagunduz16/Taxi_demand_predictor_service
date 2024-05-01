@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.9.7 || >3.9.7,<3.13"
 jupyter = "^1.0.0"
-pandas = "^2.2.2"
+pandas = "2.1.4"
 pyarrow = "^16.0.0"
 fastparquet = "^2024.2.0"
 tqdm = "^4.66.2"
@@ -19,7 +19,9 @@ xgboost = "^2.0.3"
 lightgbm = "^4.3.0"
 optuna = "^3.6.1"
 python-dotenv = "^1.0.1"
-hopsworks = "^3.7.0"
+hsfs = "3.7.5"
+hopsworks = "3.7.0"
+
 
 [build-system]
 requires = ["poetry-core"]
