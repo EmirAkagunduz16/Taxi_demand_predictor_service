@@ -20,7 +20,7 @@ def train_test_split(
     # Split data into training and testing sets
     train_data = df[df.pickup_hour < cutoff_date].reset_index(drop=True)
     test_data = df[df.pickup_hour >= cutoff_date].reset_index(drop=True)
-
+    print(f'{test_data.shape=}')
     # Split features and target
     X_train = train_data.drop(columns=[target_column_name])
     y_train = train_data[target_column_name]
