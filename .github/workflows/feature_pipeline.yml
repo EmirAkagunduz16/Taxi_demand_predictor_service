@@ -11,7 +11,6 @@ env:
   POETRY_VERSION: 1.7.0
   POETRY_URL: https://install.python-poetry.org
 
-
 jobs:
 
   feature_pipeline:
@@ -52,10 +51,4 @@ jobs:
       env: 
         HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
         HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-        
-      run: poetry run jupyter nbconvert --to notebook --execute notebooks/12_feature_pipeline.ipynb
-    
-    # - name: Run feature generation script
-    #   env: 
-    #     HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-    #   run: make features
+      run: make features
